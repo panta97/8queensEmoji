@@ -55,8 +55,11 @@ def main():
 
     board = Board(1)
 
+    boardHint = BoardHint(squares)
+
     mousex = 0
     mousey = 0
+    hintEnable = True
 
     while True:
         for event in pygame.event.get():
@@ -75,16 +78,27 @@ def main():
                     else:
                         drawBoard.drawQueenAt(boxx, boxy, screen)
                         board.PlaceQueen(boxx, boxy)
+                        boardHint.changeBoardHintState(boxx, boxy)
 
                         # gets you the new board
                         newboard = computerTurn(board)
-                        newQueenPosition = boardDistinc(board.getBoard(), newboard)
-                        boxx, boxy = newQueenPosition
 
-                        drawBoard.drawQueenAt(boxx, boxy, screen)
-                        board.PlaceQueen(boxx, boxy)
+                        if newboard is None:
+                            print("You Win")
 
-                        print(newQueenPosition)
+                        else:
+
+                            newQueenPosition = boardDistinc(board.getBoard(), newboard)
+                            boxx, boxy = newQueenPosition
+
+                            drawBoard.drawQueenAt(boxx, boxy, screen)
+                            board.PlaceQueen(boxx, boxy)
+                            boardHint.changeBoardHintState(boxx, boxy)
+
+                            print(newQueenPosition)
+
+                if hintEnable == True:
+                    boardHint.drawHints(screen)
 
         pygame.display.update()
 
@@ -222,9 +236,88 @@ def boardDistinc(currentBoard, newBoard):
 def computerTurn(board):
     solutions = NQueens(board, 1)
     numberOfSolutions = len(solutions) - 1
+
+    # in case there are no longer solutions
+    if numberOfSolutions <= 0:
+        return None
+
     randomSolutionIndex = random.randint(0, numberOfSolutions)
     chosenSolution = solutions[randomSolutionIndex]
     return chosenSolution.getBoard()
+
+
+class BoardHint():
+
+    def __init__(self, squares):
+        self.squares = squares
+        self.boardHint = []
+        for i in range(squares):
+            self.boardHint.append([False] * squares)
+
+    def getDiagonalPointsRight(self, boxx, boxy):
+        listOfTuples = []
+        # right diagonal
+        x = boxx - self.squares
+        y = boxy - self.squares
+
+        while x < self.squares and y < self.squares:
+            if x >= 0 and y >= 0:
+                listOfTuples.append((x, y))
+            x = x + 1
+            y = y + 1
+
+        # print(listOfTuples)
+        return listOfTuples
+
+    def getDiagonalPointsLeft(self, boxx, boxy):
+        listOfTuples = []
+        # right diagonal
+        x = boxx - self.squares
+        y = boxy + self.squares
+
+        while x < squares and y >= 0:
+            if x >= 0 and y < self.squares:
+                listOfTuples.append((x, y))
+            x = x + 1
+            y = y - 1
+
+        print(listOfTuples)
+        return listOfTuples[::-1]
+        # return listOfTuples
+
+    def changeBoardHintState(self, boxx, boxy):
+
+        print(boxx, boxy, squares)
+        diagonalListRight = self.getDiagonalPointsRight(boxx, boxy)
+        diagonalListLeft = self.getDiagonalPointsLeft(boxx, boxy)
+
+        for j in range(squares):
+            for i in range(squares):
+                if diagonalListRight[0] == (i, j):
+                    self.boardHint[i][j] = True
+                    if len(diagonalListRight) != 1:
+                        del diagonalListRight[0]
+                    # else:
+                    #     continue
+
+                if diagonalListLeft[0] == (i, j):
+                    self.boardHint[i][j] = True
+                    if len(diagonalListLeft) != 1:
+                        del diagonalListLeft[0]
+                    # else:
+                    #     continue
+
+                elif boxx == i or boxy == j:
+                    self.boardHint[i][j] = True
+
+    def drawHints(self, screen):
+
+        offset = 30
+
+        for i in range(squares):
+            for j in range(squares):
+                if self.boardHint[i][j] == True:
+                    pygame.draw.circle(screen, (0, 0, 0), (boardPosX + offset + i * size, boardPosY + offset + j * size), 5)
 
 
 if __name__ == '__main__':
